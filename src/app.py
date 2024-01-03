@@ -18,11 +18,11 @@ from v1.util import calculate_expected_value
 
 def loop(mdp: MarketDataModule, oms: OrderingModule, pf: PortfolioModule, sm: SpreadModule, jdm: JumpDetector, ticker: str):
 
-    global INVENTORY, BID, ASK, TRADES
+    global INVENTORY, BID, ASK, TRADES, LAST_TS
     
     # get new trades
     new_trades = mdp.get_trades(ticker)
-    TRADES = trade_diff(TRADES, new_trades)
+    TRADES, LAST_TS = trade_diff(new_trades, LAST_TS)
 
     # update pdf
     for trade in TRADES:
@@ -31,6 +31,7 @@ def loop(mdp: MarketDataModule, oms: OrderingModule, pf: PortfolioModule, sm: Sp
         # anomaly detection
         if jdm.update(trade):
             logging.info({"message_type": "ProgramInfo", "message_value": "JDM Anomaly Detected - Resetting PDF"})
+            logging.info({"message_type": "PDF", "message_value": f"{sm.pdf}"})
             ev = calculate_expected_value(sm.pdf, sm.prices)
             sm.reset_pdf(initial_true_value=ev, std_dev=spread_module_config['initial_std_dev'])
         
@@ -49,13 +50,13 @@ def loop(mdp: MarketDataModule, oms: OrderingModule, pf: PortfolioModule, sm: Sp
     
     # logging
     if cur_inv != INVENTORY:
-        logging.info({"message_type": "InventoryDelta", "message_value": cur_inv - INVENTORY})
+        logging.info({"message_type": "InventoryDelta", "message_value": int(cur_inv - INVENTORY)})
         INVENTORY = cur_inv
     if bid != BID:
-        logging.info({"message_type": "BidDelta", "message_value": bid - BID})
+        logging.info({"message_type": "BidDelta", "message_value": int(bid - BID)})
         BID = bid
     if ask != ASK:
-        logging.info({"message_type": "AskDelta", "message_value": ask - ASK})
+        logging.info({"message_type": "AskDelta", "message_value": int(ask - ASK)})
         ASK = ask
     
     time.sleep(2)  # sleeping is necessary because kalshi portfolio endpoint is slow to update after placing orders
@@ -92,6 +93,7 @@ if __name__ == "__main__":
     oms = OrderingModule(kalshi_api)
     pf = PortfolioModule(kalshi_api)
     sm = SpreadModule(spread_module_config)
+    jdm = JumpDetector(0.6, 10)
 
     # initialize global variables
     global INVENTORY, BID, ASK, TRADES
@@ -99,11 +101,28 @@ if __name__ == "__main__":
     BID = 0
     ASK = 0
     TRADES = []
+    LAST_TS = None
+
+    # warmup
+    new_trades = mdp.get_trades(ticker, 1000)
+    TRADES = new_trades
+
+    # update pdf
+    for trade in TRADES:
+        buy = True if trade['taker_side'] == 'yes' else False
+        sm.update_pdf(buy_order=buy, Pa=trade['yes_price'], Pb=trade['yes_price'])
+        _ = jdm.update(trade)
+        created_time = datetime.datetime.strptime(trade['created_time'], '%Y-%m-%dT%H:%M:%S.%fZ')
+        if LAST_TS == None or created_time > LAST_TS:
+            LAST_TS = created_time
+    
+    # log initial pdf
+    logging.info({"message_type": "PDF", "message_value": f"{sm.pdf}"})
 
     while True:
 
         # provide liquidity until your computer dies
         try:
-            loop(mdp, oms, pf, sm, ticker)
+            loop(mdp, oms, pf, sm, jdm, ticker)
         except Exception as e:
             logging.error({"message_type": "ProgramError", "message_value": f"Error: {e}"})

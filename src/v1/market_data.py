@@ -27,6 +27,9 @@ class MarketDataModule:
             
         return best_bid, best_offer
     
-    def get_trades(self, ticker: str) -> list:
-        trades_response = self.api.get_trades(ticker=ticker)
-        return trades_response.trades
+    def get_trades(self, ticker: str, limit=100) -> list:
+        trades_response = self.api.get_trades(ticker=ticker, limit=limit)
+        trades = trades_response.trades
+        # reverse the order of the trades
+        trades.reverse()
+        return trades

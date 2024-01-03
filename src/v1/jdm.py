@@ -18,7 +18,7 @@ class JumpDetector():
         Returns:
             bool: True if a jump is detected, False otherwise.
         """
-        pass
+        return False
         # add the new buy ratio to the array
         # self.buy_ratios = np.append(self.buy_ratios, buy_ratio)
         

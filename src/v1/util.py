@@ -18,14 +18,3 @@ def normal_cdf(x, mean, std_dev):
 # Function to calculate the expected value E[V]
 def calculate_expected_value(pdf, possible_prices):
     return np.sum(pdf * possible_prices)
-
-def trade_diff(old_trades: list, new_trades: list) -> list:
-    if len(old_trades) == 0:
-        return new_trades
-    last_ts = old_trades[-1]['created_time']
-    trades = []
-    for trade in new_trades:
-        if trade['created_time'] > last_ts:
-            trades.append(trade)
-            
-    return trades

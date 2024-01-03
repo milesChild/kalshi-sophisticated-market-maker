@@ -1,6 +1,6 @@
 # imports
 import numpy as np
-from util import normal_cdf, calculate_expected_value
+from v1.util import normal_cdf, calculate_expected_value
 
 class SpreadModule():
 
@@ -11,7 +11,7 @@ class SpreadModule():
         self.__eta = config['eta']  # base probability of a trade happening
         self.__sigma_W = config['sigma_W']  # standard deviation of the informed traders' signal noise
         self.pdf = None  # probability density function
-        self.prices = np.arange(config['min_price'], config['max_price'] + 1)  # possible prices
+        self.prices = np.arange(0, 101)  # possible prices
         self.reset_pdf(initial_true_value=config['initial_true_value'], std_dev=config['initial_std_dev'])
 
     def reset_pdf(self, initial_true_value: int, std_dev: int) -> None:

@@ -23,6 +23,11 @@ def order_diff(bid: int, ask: int, orders: list, best_bid: int, best_offer: int,
     existing_yes = False
     existing_no = False
 
+    if bid >= best_offer:
+        yes_price = int(best_offer-1)
+    if ask <= best_bid:
+        no_price = int(100 - best_bid-1)
+
     # check for stale prices
     for order in orders:
         # yes checks
@@ -41,12 +46,12 @@ def order_diff(bid: int, ask: int, orders: list, best_bid: int, best_offer: int,
     # generate orders
     if not existing_yes:
         if bid >= best_offer:
-            to_order.append({'action': 'buy', 'type': 'limit', 'ticker': ticker, 'count': trade_qty, 'side': 'yes', 'yes_price': int(best_offer-1), 'client_order_id': str(uuid.uuid4())})
+            to_order.append({'action': 'buy', 'type': 'limit', 'ticker': ticker, 'count': trade_qty, 'side': 'yes', 'yes_price': yes_price, 'client_order_id': str(uuid.uuid4())})
         else:
             to_order.append({'action': 'buy', 'type': 'limit', 'ticker': ticker, 'count': trade_qty, 'side': 'yes', 'yes_price': int(bid), 'client_order_id': str(uuid.uuid4())})
     if not existing_no:
         if ask <= best_bid:
-            to_order.append({'action': 'buy', 'type': 'limit', 'ticker': ticker, 'count': trade_qty, 'side': 'no', 'no_price': int(100 - best_bid+1), 'client_order_id': str(uuid.uuid4())})
+            to_order.append({'action': 'buy', 'type': 'limit', 'ticker': ticker, 'count': trade_qty, 'side': 'no', 'no_price': no_price, 'client_order_id': str(uuid.uuid4())})
         else:
             to_order.append({'action': 'buy', 'type': 'limit', 'ticker': ticker, 'count': trade_qty, 'side': 'no', 'no_price': int(100 - ask), 'client_order_id': str(uuid.uuid4())})
     
@@ -123,3 +128,15 @@ def plot_bid_ask_history(bid_history, ask_history):
     
     # Show plot
     plt.show()
+
+def trade_diff(new_trades: list, last_ts) -> tuple:
+    trades = []
+    max_ts = last_ts
+    for trade in new_trades:
+        trade_ts = datetime.datetime.strptime(trade['created_time'], '%Y-%m-%dT%H:%M:%S.%fZ')
+        if last_ts == None or trade_ts > last_ts:
+            trades.append(trade)
+            if trade_ts > max_ts:
+                max_ts = trade_ts
+            
+    return trades, max_ts
