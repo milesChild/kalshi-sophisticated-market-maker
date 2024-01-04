@@ -10,7 +10,7 @@ from v1.portfolio import PortfolioModule
 from v1.spread import SpreadModule
 from v1.jdm import JumpDetector
 from credentials import EMAIL, PW
-from config import spread_module_config, log_file_path, trade_qty
+from config import spread_module_config, log_file_path
 from util import order_diff, JsonFormatter, trade_diff
 from v1.util import calculate_expected_value
 
@@ -39,7 +39,7 @@ def loop(mdp: MarketDataModule, oms: OrderingModule, pf: PortfolioModule, sm: Sp
     open_orders = pf.get_open_orders(ticker)
     best_bid, best_offer = mdp.get_bbo(ticker)
     bid, ask = sm.get_spread(cur_inv)
-    orders, cancels = order_diff(bid, ask, open_orders, best_bid, best_offer, ticker, trade_qty)
+    orders, cancels = order_diff(bid, ask, open_orders, best_bid, best_offer, ticker, spread_module_config['trade_qty'])
     for cancel in cancels:
         logging.info({"message_type": "OrderCancel", "message_value": cancel})
         oms.cancel_order(cancel)

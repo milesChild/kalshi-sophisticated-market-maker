@@ -10,6 +10,8 @@ class SpreadModule():
         self.__alpha = config['alpha']  # proportion of informed traders
         self.__eta = config['eta']  # base probability of a trade happening
         self.__sigma_W = config['sigma_W']  # standard deviation of the informed traders' signal noise
+        self.lot_size = config['lot_size']  # lot size of the security
+        self.trade_qty = config['trade_qty']  # quantity this market maker posts bids and offers at
         self.pdf = None  # probability density function
         self.prices = np.arange(0, 101)  # possible prices
         self.reset_pdf(initial_true_value=config['initial_true_value'], std_dev=config['initial_std_dev'])
@@ -66,7 +68,7 @@ class SpreadModule():
     def get_spread(self, cur_inv) -> tuple:
         bid = self.__calculate_bid()
         ask = self.__calculate_ask()
-        adjustment = self.calculate_inventory_adjustment(cur_inv)
+        adjustment = self.calculate_inventory_adjustment(cur_inv) * (cur_inv / self.trade_qty)
         if bid == ask:
             bid -= 1
             ask += 1
@@ -131,7 +133,6 @@ class SpreadModule():
     def calculate_inventory_adjustment(self, cur_inv) -> int:
         return int(self.__i_max * (1 - np.exp(-self.__i_a * np.abs(cur_inv))) * -np.sign(cur_inv))
     
-    
     def __probability_buy_given_V(self, Vi, Pa) -> float:
         """
         Compute the probability of a buy order given the true value V = Vi.
@@ -183,6 +184,7 @@ class SpreadModule():
         probability_vector (numpy.ndarray): The current probability vector for all possible values of V.
         probability_buy (float): The probability of a buy order given V = Vi.
         total_buy_probability (float): The total probability of observing a buy order, summed over all V.
+        trade_qty (int): The quantity of the trade.
 
         Returns:
         float: The posterior probability P(V=Vi | Buy).
