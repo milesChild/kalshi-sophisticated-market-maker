@@ -69,7 +69,7 @@ class SpreadModule():
     def get_spread(self, cur_inv) -> tuple:
         bid = self.__calculate_bid()
         ask = self.__calculate_ask()
-        adjustment = self.calculate_inventory_adjustment(cur_inv) * (cur_inv / self.trade_qty))
+        adjustment = self.calculate_inventory_adjustment(cur_inv) * (cur_inv / self.trade_qty)
         if bid == ask:
             bid -= 1
             ask += 1

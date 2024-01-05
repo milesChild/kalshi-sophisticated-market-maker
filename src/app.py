@@ -71,7 +71,7 @@ if __name__ == "__main__":
     logfilepath = log_file_path+ticker+str(date)+".log"
 
     # Set up JSON logging
-    logging.basicConfig(filename=logfilepath, level=logging.INFO)
+    logging.basicConfig(filename=logfilepath, level=logging.DEBUG)
     logger = logging.getLogger()
     handler = logger.handlers[0]
     handler.setFormatter(JsonFormatter())
