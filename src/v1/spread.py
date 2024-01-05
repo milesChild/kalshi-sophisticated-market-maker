@@ -1,5 +1,6 @@
 # imports
 import numpy as np
+import logging
 from v1.util import normal_cdf, calculate_expected_value
 
 class SpreadModule():
@@ -68,7 +69,7 @@ class SpreadModule():
     def get_spread(self, cur_inv) -> tuple:
         bid = self.__calculate_bid()
         ask = self.__calculate_ask()
-        adjustment = self.calculate_inventory_adjustment(cur_inv) * (cur_inv / self.trade_qty)
+        adjustment = self.calculate_inventory_adjustment(cur_inv) * (cur_inv / self.trade_qty))
         if bid == ask:
             bid -= 1
             ask += 1
@@ -76,6 +77,8 @@ class SpreadModule():
         # ensure the bid and asks with the adjustments are within 0 - 100
         bid = max(0, min(bid + adjustment, 100))
         ask = max(0, min(ask + adjustment, 100))
+        logging.debug({"message_type": "SpreadSnapshot", "message_value": f"{bid} - {ask}"})
+        logging.debug({"message_type": "InventoryAdjustment", "message_value": f"{adjustment}"})
         return bid, ask
 
     def __calculate_bid(self) -> int:
