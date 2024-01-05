@@ -45,8 +45,8 @@ def loop(mdp: MarketDataModule, oms: OrderingModule, pf: PortfolioModule, sm: Sp
         oms.cancel_order(cancel)
 
     for order in orders:
-        logging.info({"message_type": "OrderPlace", "message_value": order})
         oms.place_order(order)
+        logging.debug({"message_type": "OrderPlace", "message_value": order})
     
     # logging
     if cur_inv != INVENTORY:
@@ -58,6 +58,8 @@ def loop(mdp: MarketDataModule, oms: OrderingModule, pf: PortfolioModule, sm: Sp
     if ask != ASK:
         logging.info({"message_type": "AskDelta", "message_value": int(ask - ASK)})
         ASK = ask
+    # debug log
+    logging.debug({"message_type": "PDF", "message_value": f"{sm.pdf}"})
     
     time.sleep(2)  # sleeping is necessary because kalshi portfolio endpoint is slow to update after placing orders
 
@@ -131,6 +133,9 @@ if __name__ == "__main__":
     
     # log initial pdf
     logging.info({"message_type": "PDF", "message_value": f"{sm.pdf}"})
+    # log initial expected value
+    ev = calculate_expected_value(sm.pdf, sm.prices)
+    logging.info({"message_type": "ExpectedValue", "message_value": f"{ev}"})
 
     while True:
 
