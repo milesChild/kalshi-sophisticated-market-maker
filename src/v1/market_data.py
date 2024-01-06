@@ -9,13 +9,13 @@ class MarketDataModule:
         market_response = self.api.get_market(ticker)
         return market_response.market.last_price
 
-    def __get_orderbook(self, ticker: str) -> dict:
+    def get_orderbook(self, ticker: str) -> dict:
         orderbook_response = self.api.get_market_orderbook(ticker)
         return orderbook_response.orderbook
     
     def get_bbo(self, ticker: str) -> tuple:
 
-        orderbook = self.__get_orderbook(ticker)
+        orderbook = self.get_orderbook(ticker)
         if len(orderbook.yes) > 0:
             best_bid = max(orderbook.yes, key=lambda x: x[0])[0]
         else:

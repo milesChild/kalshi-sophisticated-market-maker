@@ -11,7 +11,7 @@ from v1.spread import SpreadModule
 from v1.jdm import JumpDetector
 from credentials import EMAIL, PW
 from config import spread_module_config, log_file_path
-from util import order_diff, JsonFormatter, trade_diff
+from util import order_diff, JsonFormatter, trade_diff, yes_safety_check, no_safety_check
 from v1.util import calculate_expected_value
 
 # note: yes, ik this is poor implementation. this is not hft
@@ -38,8 +38,11 @@ def loop(mdp: MarketDataModule, oms: OrderingModule, pf: PortfolioModule, sm: Sp
     cur_inv = pf.get_inventory(ticker)
     open_orders = pf.get_open_orders(ticker)
     best_bid, best_offer = mdp.get_bbo(ticker)
+    orderbook = mdp.get_orderbook(ticker)
+    yes_check = yes_safety_check(orderbook, open_orders)
+    no_check = no_safety_check(orderbook, open_orders)
     bid, ask = sm.get_spread(cur_inv)
-    orders, cancels = order_diff(bid, ask, open_orders, best_bid, best_offer, ticker, spread_module_config['trade_qty'])
+    orders, cancels = order_diff(bid, ask, open_orders, best_bid, best_offer, ticker, spread_module_config['trade_qty'], yes_check, no_check)
     for cancel in cancels:
         logging.info({"message_type": "OrderCancel", "message_value": cancel})
         oms.cancel_order(cancel)

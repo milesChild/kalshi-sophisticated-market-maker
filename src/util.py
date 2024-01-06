@@ -15,7 +15,7 @@ class JsonFormatter(logging.Formatter):
         }
         return json.dumps(log_record)
     
-def order_diff(bid: int, ask: int, orders: list, best_bid: int, best_offer: int, ticker: str, trade_qty: int) -> tuple:
+def order_diff(bid: int, ask: int, orders: list, best_bid: int, best_offer: int, ticker: str, trade_qty: int, yes_check: bool, no_check: bool) -> tuple:
     yes_price = bid
     no_price = 100 - ask
     to_cancel = [] # list of order ids to cancel
@@ -45,16 +45,17 @@ def order_diff(bid: int, ask: int, orders: list, best_bid: int, best_offer: int,
     
     # generate orders
     if not existing_yes:
-        if bid > 3 and best_bid > 3:  # TODO: Flawed
+        if yes_check:
             if bid >= best_offer:
                 to_order.append({'action': 'buy', 'type': 'limit', 'ticker': ticker, 'count': trade_qty, 'side': 'yes', 'yes_price': yes_price, 'client_order_id': str(uuid.uuid4())})
             else:
                 to_order.append({'action': 'buy', 'type': 'limit', 'ticker': ticker, 'count': trade_qty, 'side': 'yes', 'yes_price': int(bid), 'client_order_id': str(uuid.uuid4())})
     if not existing_no:
-        if ask <= best_bid:
-            to_order.append({'action': 'buy', 'type': 'limit', 'ticker': ticker, 'count': trade_qty, 'side': 'no', 'no_price': no_price, 'client_order_id': str(uuid.uuid4())})
-        else:
-            to_order.append({'action': 'buy', 'type': 'limit', 'ticker': ticker, 'count': trade_qty, 'side': 'no', 'no_price': int(100 - ask), 'client_order_id': str(uuid.uuid4())})
+        if no_check:
+            if ask <= best_bid:
+                to_order.append({'action': 'buy', 'type': 'limit', 'ticker': ticker, 'count': trade_qty, 'side': 'no', 'no_price': no_price, 'client_order_id': str(uuid.uuid4())})
+            else:
+                to_order.append({'action': 'buy', 'type': 'limit', 'ticker': ticker, 'count': trade_qty, 'side': 'no', 'no_price': int(100 - ask), 'client_order_id': str(uuid.uuid4())})
     
     return to_order, to_cancel
 
@@ -141,3 +142,37 @@ def trade_diff(new_trades: list, last_ts) -> tuple:
                 max_ts = trade_ts
             
     return trades, max_ts
+
+def yes_safety_check(orderbook, open_orders) -> bool:
+    # remove our orders from the orderbook
+
+    for order in open_orders:
+        if order['side'] == 'yes':
+            for tup in orderbook.yes:
+                if tup[0] == order['yes_price']:
+                    tup[1] -= order['place_count']
+
+    # get the cleaned best bid
+    if len(orderbook.yes) > 0:
+        best_bid = max(orderbook.yes, key=lambda x: x[0])[0]
+    else:
+        best_bid = 0
+    
+    return True if best_bid > 3 else False
+
+def no_safety_check(orderbook, open_orders) -> bool:
+    # remove our orders from the orderbook
+
+    for order in open_orders:
+        if order['side'] == 'no':
+            for tup in orderbook.no:
+                if tup[0] == order['no_price']:
+                    tup[1] -= order['place_count']
+
+    # get the cleaned b
+    if len(orderbook.no) > 0:
+        best_offer = 100 - max(orderbook.no, key=lambda x: x[0])[0]
+    else:
+        best_offer = 0
+    
+    return True if best_offer < 97 else False
