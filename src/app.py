@@ -119,8 +119,11 @@ if __name__ == "__main__":
     for trade in TRADES:
         historical_trade_prices.append(trade['yes_price'])
     
-    median_trade_price = sorted(historical_trade_prices)[len(historical_trade_prices)//2]
-    sm.reset_pdf(initial_true_value=median_trade_price, std_dev=spread_module_config['initial_std_dev'])
+    if len(historical_trade_prices) != 0:
+        median_trade_price = sorted(historical_trade_prices)[len(historical_trade_prices)//2]
+        sm.reset_pdf(initial_true_value=median_trade_price, std_dev=spread_module_config['initial_std_dev'])
+    else:
+        logging.info({"message_type": "ProgramInfo", "message_value": "No historical trades found. Using default initial true value."})
 
     # TODO: Temp (above)
 
